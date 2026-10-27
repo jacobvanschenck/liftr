@@ -1,5 +1,7 @@
 # Liftr
 
+[![CI](https://github.com/jacobvanschenck/liftr/actions/workflows/ci.yml/badge.svg)](https://github.com/jacobvanschenck/liftr/actions/workflows/ci.yml)
+
 A private strength-training log for a small household. The phone-first UI is built for the gym:
 start a routine, log sets, and see the same history on the dashboard and each exercise.
 

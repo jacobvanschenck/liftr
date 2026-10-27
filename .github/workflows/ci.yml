@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # worker-configuration.d.ts is gitignored because it can embed local env
+      # values. Generate it with dummy values so type-checking matches the
+      # production Worker bindings.
+      - name: Generate Cloudflare env types
+        run: |
+          printf 'CLERK_SECRET_KEY=sk_test_dummy\nALLOWED_CLERK_USER_IDS=user_dummy\nDEV_AUTH_BYPASS=1\n' > .dev.vars
+          pnpm cf-typegen
+
+      - run: pnpm check
+      - run: pnpm build
