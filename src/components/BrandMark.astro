@@ -1,0 +1,18 @@
+---
+interface Props {
+  size?: 'small' | 'large';
+  class?: string;
+}
+const { size = 'small', class: className = '' } = Astro.props;
+---
+
+<span class:list={['brand', className]}>
+  <img
+    class:list={['brand-mark', size === 'large' && 'large']}
+    src="/icons/icon-192.png"
+    alt=""
+    width={size === 'large' ? 58 : 34}
+    height={size === 'large' ? 58 : 34}
+  />
+  <span>Liftr</span>
+</span>

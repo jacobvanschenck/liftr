@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ExerciseCatalog from '../../components/ExerciseCatalog.astro';
+import { listExercises } from '../../lib/exercises';
+
+const member = Astro.locals.member;
+if (member === null) return Astro.redirect('/sign-in');
+
+const exercises = await listExercises(member);
+const error = Astro.url.searchParams.get('error');
+---
+
+<Layout title="Exercises" member={member}>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Shared catalog</p>
+      <h1 class="page-title">Exercises</h1>
+      <p class="page-subtitle">
+        One catalog for both lifters. Star the lifts that feed your strength score.
+      </p>
+    </div>
+  </header>
+
+  <ExerciseCatalog exercises={exercises} error={error} />
+</Layout>

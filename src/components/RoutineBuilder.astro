@@ -1,0 +1,142 @@
+---
+import type { EquipmentCategory, Exercise } from '../lib/types';
+
+export type BuilderItem = {
+  exerciseId: string;
+  name: string;
+  equipmentCategory: EquipmentCategory;
+  targetSetCount: number;
+  targetRepMin: number | null;
+  targetRepMax: number | null;
+};
+
+interface Props {
+  mode: 'new' | 'edit';
+  routineId?: string;
+  name: string;
+  items: BuilderItem[];
+  catalog: Exercise[];
+  error?: string | null;
+}
+
+const { mode, routineId, name, items, catalog, error = null } = Astro.props;
+
+const config = {
+  name,
+  items,
+  catalog: catalog.map((exercise) => ({
+    id: exercise.id,
+    name: exercise.name,
+    equipmentCategory: exercise.equipmentCategory,
+    isCore: exercise.isCore,
+  })),
+};
+const configJson = JSON.stringify(config).replaceAll('<', '\\u003c');
+const action =
+  mode === 'edit' && routineId
+    ? `/api/routines/${routineId}/update`
+    : '/api/routines/create';
+---
+
+<script type="application/json" id="routine-config" set:html={configJson} />
+
+
+<form class="form" method="post" action={action} x-data="routineBuilder(JSON.parse(document.getElementById('routine-config').textContent))">
+  {error && <div class="form-error" role="alert">{error}</div>}
+
+  <label class="field">
+    <span class="label">Routine name</span>
+    <input
+      class="input"
+      name="name"
+      x-model="name"
+      placeholder="e.g. Push Day"
+      required
+      maxlength="80"
+      autocomplete="off"
+    />
+  </label>
+
+  <div class="section-heading" style="margin-top:4px">
+    <h2 class="section-title">Exercises</h2>
+    <span class="tiny muted" x-text="`${items.length} selected`"></span>
+  </div>
+
+  <div class="builder-list" x-show="items.length > 0" x-cloak>
+    <template x-for="(item, index) in items" :key="item.exerciseId">
+      <div class="builder-row">
+        <div class="builder-main">
+          <span class="builder-order" x-text="index + 1"></span>
+          <div class="grow">
+            <div class="list-title" x-text="item.name"></div>
+            <div class="list-meta" x-text="item.equipmentCategory"></div>
+          </div>
+          <div class="builder-actions">
+            <button class="icon-button" type="button" @click="move(index, -1)" :disabled="index === 0" aria-label="Move up">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            </button>
+            <button class="icon-button" type="button" @click="move(index, 1)" :disabled="index === items.length - 1" aria-label="Move down">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <button class="icon-button danger" type="button" @click="remove(index)" aria-label="Remove">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            </button>
+          </div>
+        </div>
+        <div class="builder-fields">
+          <label class="field">
+            <span class="label" style="font-size:9px">Sets</span>
+            <input class="input" type="number" min="1" max="20" x-model="item.targetSetCount" />
+          </label>
+          <label class="field">
+            <span class="label" style="font-size:9px">Rep min</span>
+            <input class="input" type="number" min="1" max="1000" x-model="item.targetRepMin" placeholder="—" />
+          </label>
+          <label class="field">
+            <span class="label" style="font-size:9px">Rep max</span>
+            <input class="input" type="number" min="1" max="1000" x-model="item.targetRepMax" placeholder="—" />
+          </label>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <div class="empty-state" x-show="items.length === 0" x-cloak>
+    <div class="empty-title">Pick the first movement</div>
+    <div class="empty-body">Add exercises from the shared catalog below, then set targets.</div>
+  </div>
+
+  <div class="section-heading" style="margin-top:8px">
+    <h2 class="section-title">Add from catalog</h2>
+    <span class="tiny muted" x-text="`${available.length} available`"></span>
+  </div>
+
+  <input
+    class="input"
+    type="search"
+    placeholder="Filter exercises"
+    x-model="filter"
+    autocomplete="off"
+    aria-label="Filter the exercise catalog"
+  />
+
+  <div class="catalog-picker">
+    <template x-for="exercise in available" :key="exercise.id">
+      <button class="catalog-chip" type="button" @click="add(exercise)">
+        <span x-text="exercise.name"></span>
+      </button>
+    </template>
+  </div>
+
+  <p class="form-hint" x-show="available.length === 0" x-cloak>
+    <span x-show="items.length === catalog.length">Every catalog exercise is already in this routine.</span>
+    <span x-show="items.length < catalog.length">No exercises match that filter.</span>
+  </p>
+
+  <input type="hidden" name="items" :value="JSON.stringify(items)" />
+
+  <div class="form-actions">
+    <button class="button primary" type="submit">{mode === 'edit' ? 'Save routine' : 'Create routine'}</button>
+    <a class="button ghost" href="/routines">Cancel</a>
+  </div>
+</form>

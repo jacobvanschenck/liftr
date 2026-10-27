@@ -1,0 +1,136 @@
+---
+import type { Exercise } from '../lib/types';
+
+interface Props {
+  exercises: Exercise[];
+  error?: string | null;
+  query?: string;
+}
+
+const { exercises, error = null, query = '' } = Astro.props;
+const coreCount = exercises.filter((exercise) => exercise.isCore).length;
+const equipmentLabel: Record<string, string> = {
+  barbell: 'Barbell',
+  dumbbell: 'Dumbbell',
+  machine: 'Machine',
+};
+---
+
+<div id="exercise-catalog">
+  <div class="row between" style="margin-bottom:10px">
+    <span class="tiny muted">{exercises.length} exercises · {coreCount} core</span>
+    <span class="tiny muted">Tap the star to track</span>
+  </div>
+
+  {
+    error && (
+      <div class="form-error" style="margin-bottom:12px" role="alert">
+        {error}
+      </div>
+    )
+  }
+
+  <div
+    x-data={`{ q: ${JSON.stringify(query)} }`}
+    class="stack"
+  >
+    <label class="field" style="gap:0">
+      <span class="sr-only">Filter exercises</span>
+      <input
+        class="input"
+        type="search"
+        placeholder="Filter catalog…"
+        x-model="q"
+        autocomplete="off"
+      />
+    </label>
+
+    <div class="list">
+      {
+        exercises.map((exercise) => (
+          <div
+            class="list-row"
+            x-show={`${JSON.stringify(exercise.name)}.toLowerCase().includes(q.toLowerCase())`}
+          >
+            <form method="post" action={`/api/exercises/${exercise.id}/core`} style="display:contents">
+              <input type="hidden" name="isCore" value={exercise.isCore ? '0' : '1'} />
+              <button
+                class:list={['icon-button', exercise.isCore && 'accent']}
+                type="submit"
+                aria-label={exercise.isCore ? `Unstar ${exercise.name}` : `Star ${exercise.name}`}
+                title={exercise.isCore ? 'Core lift' : 'Star as core lift'}
+              >
+                <svg viewBox="0 0 24 24" width="17" height="17" fill={exercise.isCore ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+                  <path d="m12 2.6 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 16.66 6.5 19.55l1.05-6.13L3.09 9.08l6.16-.9L12 2.6Z" />
+                </svg>
+              </button>
+            </form>
+
+            <a class="grow" href={`/exercises/${exercise.id}`} style="min-width:0">
+              <div class="list-title">{exercise.name}</div>
+              <div class="list-meta">
+                {equipmentLabel[exercise.equipmentCategory] ?? exercise.equipmentCategory}
+                {exercise.isCore ? ' · Core lift' : ''}
+              </div>
+            </a>
+
+            <a
+              class="icon-button"
+              href={`/exercises/${exercise.id}/edit`}
+              aria-label={`Edit ${exercise.name}`}
+              title="Edit"
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </a>
+          </div>
+        ))
+      }
+    </div>
+
+    {
+      exercises.length === 0 && (
+        <div class="empty-state">
+          <div class="empty-title">The catalog is empty</div>
+          <div class="empty-body">Add your first exercise below.</div>
+        </div>
+      )
+    }
+  </div>
+
+  <div class="section-heading">
+    <h2 class="section-title">Add exercise</h2>
+  </div>
+
+  <form class="card form compact" method="post" action="/api/exercises/create">
+    <div class="form-row">
+      <label class="field">
+        <span class="label">Name</span>
+        <input
+          class="input"
+          name="name"
+          placeholder="e.g. Incline press"
+          required
+          maxlength="80"
+          autocomplete="off"
+        />
+      </label>
+      <label class="field">
+        <span class="label">Equipment</span>
+        <select class="select" name="equipmentCategory" required>
+          <option value="barbell">Barbell</option>
+          <option value="dumbbell">Dumbbell</option>
+          <option value="machine">Machine</option>
+        </select>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="button primary" type="submit">
+        <span class="htmx-indicator">Adding…</span>
+        <span>Add to catalog</span>
+      </button>
+    </div>
+  </form>
+</div>

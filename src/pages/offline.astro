@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BrandMark from '../components/BrandMark.astro';
+---
+
+<Layout title="Offline" hideNav>
+  <div class="state-page">
+    <BrandMark size="large" />
+    <p class="state-code">No connection</p>
+    <h1 class="state-title">The gym can wait.</h1>
+    <p class="state-body">
+      Liftr needs a connection to save sets. Reconnect, then reopen the app — your
+      last session is still on the server.
+    </p>
+    <button class="button primary" onclick="location.reload()">Try again</button>
+  </div>
+</Layout>

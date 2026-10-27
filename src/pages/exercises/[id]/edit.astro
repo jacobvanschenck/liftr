@@ -1,0 +1,62 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getExercise } from '../../../lib/exercises';
+
+const member = Astro.locals.member;
+if (member === null) return Astro.redirect('/sign-in');
+
+const exercise = await getExercise(member, Astro.params.id ?? '');
+if (exercise === null) return new Response('Exercise not found', { status: 404 });
+
+const error = Astro.url.searchParams.get('error');
+---
+
+<Layout title={`Edit ${exercise.name}`} member={member}>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Catalog</p>
+      <h1 class="page-title">Edit exercise</h1>
+      <p class="page-subtitle">Renaming keeps every logged set attached to this exercise.</p>
+    </div>
+    <a class="icon-button" href={`/exercises/${exercise.id}`} aria-label="Cancel">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    </a>
+  </header>
+
+  <form class="card form" method="post" action={`/api/exercises/${exercise.id}/update`}>
+    {error && <div class="form-error" role="alert">{error}</div>}
+
+    <label class="field">
+      <span class="label">Exercise name</span>
+      <input
+        class="input"
+        name="name"
+        value={exercise.name}
+        required
+        maxlength="80"
+        autocomplete="off"
+      />
+    </label>
+
+    <label class="field">
+      <span class="label">Equipment</span>
+      <select class="select" name="equipmentCategory" required>
+        <option value="barbell" selected={exercise.equipmentCategory === 'barbell'}>Barbell</option>
+        <option value="dumbbell" selected={exercise.equipmentCategory === 'dumbbell'}>Dumbbell</option>
+        <option value="machine" selected={exercise.equipmentCategory === 'machine'}>Machine</option>
+      </select>
+    </label>
+
+    <label class="checkbox-row">
+      <input type="checkbox" name="isCore" value="1" checked={exercise.isCore} />
+      <span>Track as a core lift (feeds the strength score)</span>
+    </label>
+
+    <div class="form-actions">
+      <button class="button primary" type="submit">Save changes</button>
+      <a class="button ghost" href={`/exercises/${exercise.id}`}>Cancel</a>
+    </div>
+  </form>
+</Layout>

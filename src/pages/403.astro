@@ -1,0 +1,23 @@
+---
+import { SignOutButton } from '@clerk/astro/components';
+import Layout from '../layouts/Layout.astro';
+import BrandMark from '../components/BrandMark.astro';
+
+const { userId } = Astro.locals.auth();
+if (!userId) return Astro.redirect('/sign-in');
+---
+
+<Layout title="Not invited" hideNav>
+  <div class="state-page">
+    <BrandMark size="large" />
+    <p class="state-code">403 · Private</p>
+    <h1 class="state-title">This log is just for two.</h1>
+    <p class="state-body">
+      You are signed in, but this Clerk account is not one of the Liftr family members.
+      If you think this is a mistake, sign out and use an invited account.
+    </p>
+    <SignOutButton redirectUrl="/" asChild>
+      <button class="button" type="button">Sign out</button>
+    </SignOutButton>
+  </div>
+</Layout>

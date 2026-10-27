@@ -1,0 +1,107 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { listRoutines } from '../../lib/routines';
+import { getActiveSessionSummary } from '../../lib/sessions';
+import { todayInTimeZone, relativeDateLabel } from '../../lib/dates';
+
+const member = Astro.locals.member;
+if (member === null) return Astro.redirect('/sign-in');
+
+const [routines, activeSession] = await Promise.all([
+  listRoutines(member),
+  getActiveSessionSummary(member),
+]);
+const today = todayInTimeZone(member.timezone);
+const error = Astro.url.searchParams.get('error');
+---
+
+<Layout title="Routines" member={member}>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Program</p>
+      <h1 class="page-title">Routines</h1>
+      <p class="page-subtitle">Pick a plan and the app remembers the targets set by set.</p>
+    </div>
+    <a class="icon-button accent" href="/routines/new" aria-label="New routine">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+    </a>
+  </header>
+
+  {error && <div class="form-error" style="margin-bottom:16px" role="alert">{error}</div>}
+
+  {activeSession && (
+    <div class="hero" style="margin-bottom:18px">
+      <div class="score-label"><span class="dot"></span> In progress</div>
+      <div class="score-value" style="font-size:34px;letter-spacing:-0.04em">{activeSession.routineName}</div>
+      <div class="score-meta">
+        <span>{relativeDateLabel(activeSession.trainingDate, today)}</span>
+        <span>Resume where you left off</span>
+      </div>
+      <div class="score-cta">
+        <a class="button primary block" href="/session">Resume session</a>
+      </div>
+    </div>
+  )}
+
+  <div class="section-heading">
+    <h2 class="section-title">Your routines</h2>
+    <span class="tiny muted">{routines.length} saved</span>
+  </div>
+
+  {routines.length === 0 ? (
+    <div class="empty-state">
+      <div class="empty-title">Build your first routine</div>
+      <div class="empty-body">
+        Choose exercises from the shared catalog, set target sets and reps, then start training.
+      </div>
+      <a class="button small primary" href="/routines/new">New routine</a>
+    </div>
+  ) : (
+    <div class="stack">
+      {routines.map((routine) => (
+        <article class="card compact">
+          <div class="row top">
+            <div class="grow">
+              <div class="list-title" style="font-size:16px">{routine.name}</div>
+              <div class="list-meta">{routine.exerciseCount} exercises</div>
+            </div>
+            <a
+              class="icon-button"
+              href={`/routines/${routine.id}/edit`}
+              aria-label={`Edit ${routine.name}`}
+              title="Edit routine"
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </a>
+          </div>
+
+          <form method="post" action="/api/sessions/start" style="margin-top:12px">
+            <input type="hidden" name="routineId" value={routine.id} />
+            <input type="hidden" name="trainingDate" value={today} />
+            <button class="button primary block" type="submit" disabled={activeSession !== null}>
+              {activeSession ? 'Finish current session first' : 'Start session'}
+            </button>
+          </form>
+        </article>
+      ))}
+    </div>
+  )}
+
+  <div class="section-heading">
+    <h2 class="section-title">New</h2>
+  </div>
+  <a class="card interactive" href="/routines/new" style="display:block">
+    <div class="row between">
+      <div>
+        <div class="list-title">Build a routine</div>
+        <div class="list-meta">Order exercises and set targets</div>
+      </div>
+      <span class="icon-button accent">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+      </span>
+    </div>
+  </a>
+</Layout>

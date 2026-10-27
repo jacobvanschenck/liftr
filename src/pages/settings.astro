@@ -1,0 +1,104 @@
+---
+import { SignOutButton } from '@clerk/astro/components';
+import Layout from '../layouts/Layout.astro';
+import { longDate } from '../lib/dates';
+
+const member = Astro.locals.member;
+if (member === null) return Astro.redirect(Astro.locals.auth().userId ? '/403' : '/sign-in');
+---
+
+<Layout title="Settings" member={member}>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Account</p>
+      <h1 class="page-title">Settings</h1>
+    </div>
+    <a class="icon-button" href="/" aria-label="Home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+    </a>
+  </header>
+
+  <section class="card">
+    <div class="row">
+      <div class="avatar" style="display:grid;place-items:center;width:54px;height:54px;border-radius:16px;background:var(--accent-soft);color:var(--accent);font-size:20px;font-weight:750">
+        {member.name.slice(0, 1).toUpperCase()}
+      </div>
+      <div class="grow">
+        <div class="list-title" style="font-size:17px">{member.name}</div>
+        <div class="list-meta">{member.email ?? 'Email managed by Clerk'}</div>
+      </div>
+      <span class="pill accent">Member</span>
+    </div>
+
+    <div class="divider" style="margin:18px 0"></div>
+
+    <div class="stack tight">
+      <div class="row between">
+        <span class="muted tiny">Timezone</span>
+        <span class="tiny">{member.timezone}</span>
+      </div>
+      <div class="row between">
+        <span class="muted tiny">Member since</span>
+        <span class="tiny">{longDate(new Date(member.createdAt).toISOString().slice(0, 10))}</span>
+      </div>
+      <div class="row between">
+        <span class="muted tiny">Family</span>
+        <span class="tiny">Liftr household</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-heading">
+    <h2 class="section-title">Account portal</h2>
+  </div>
+  <a
+    class="card interactive"
+    href="https://dynamic-flea-2535.clerk.accounts.dev/user"
+    target="_blank"
+    rel="noreferrer"
+    style="display:block"
+  >
+    <div class="row between">
+      <div>
+        <div class="list-title">Manage account</div>
+        <div class="list-meta">Name, email, connected Google account</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m9 18 6-6-6-6" />
+      </svg>
+    </div>
+  </a>
+
+  <div class="section-heading">
+    <h2 class="section-title">App</h2>
+  </div>
+  <section class="card compact">
+    <div class="stack tight">
+      <div class="row between">
+        <span class="tiny muted">Version</span>
+        <span class="tiny">0.1.0</span>
+      </div>
+      <div class="row between">
+        <span class="tiny muted">Data</span>
+        <span class="tiny">Cloudflare D1 · online only</span>
+      </div>
+      <div class="row between">
+        <span class="tiny muted">Install</span>
+        <span class="tiny">Share → Add to Home Screen</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-heading">
+    <h2 class="section-title">Session</h2>
+  </div>
+  <SignOutButton redirectUrl="/" asChild>
+    <button class="button danger block" type="button">Sign out</button>
+  </SignOutButton>
+
+  <p class="form-hint" style="text-align:center;margin-top:18px">
+    Liftr keeps your data private to this two-person family. It is not a social app.
+  </p>
+</Layout>

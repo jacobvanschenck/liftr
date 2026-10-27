@@ -1,0 +1,133 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TrendChart from '../../components/TrendChart.astro';
+import EquipmentArt from '../../components/EquipmentArt.astro';
+import { getExerciseDetail } from '../../lib/exercises';
+import {
+  formatLoad,
+  formatScore,
+  formatVolume,
+  relativeDateLabel,
+  todayInTimeZone,
+} from '../../lib/dates';
+
+const member = Astro.locals.member;
+if (member === null) return Astro.redirect('/sign-in');
+
+const detail = await getExerciseDetail(member, Astro.params.id ?? '');
+if (detail === null) return new Response('Exercise not found', { status: 404 });
+
+const { exercise, stats, history, chart } = detail;
+const today = todayInTimeZone(member.timezone);
+const equipmentLabel: Record<string, string> = {
+  barbell: 'Barbell',
+  dumbbell: 'Dumbbell',
+  machine: 'Machine',
+};
+---
+
+<Layout title={exercise.name} member={member}>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Exercise</p>
+      <h1 class="page-title">{exercise.name}</h1>
+      <div class="row wrap" style="margin-top:10px;gap:6px">
+        <span class="pill">{equipmentLabel[exercise.equipmentCategory]}</span>
+        {exercise.isCore && <span class="pill core">Core lift</span>}
+        {stats.lastTrained && (
+          <span class="pill">Last {relativeDateLabel(stats.lastTrained, today)}</span>
+        )}
+      </div>
+    </div>
+    <a class="icon-button" href={`/exercises/${exercise.id}/edit`} aria-label="Edit exercise">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </svg>
+    </a>
+  </header>
+
+  <div class="card art-card">
+    <EquipmentArt category={exercise.equipmentCategory} load={stats.heaviest?.load ?? 45} />
+  </div>
+
+  <div class="stat-grid" style="margin-top:12px">
+    <div class="stat">
+      <div class="stat-value">{stats.best ? formatScore(stats.best.estimatedOneRepMax) : '—'}</div>
+      <div class="stat-label">Best e1RM</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">{stats.heaviest ? formatLoad(stats.heaviest.load) : '—'}</div>
+      <div class="stat-label">Heaviest lb</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">{stats.totalSessions}</div>
+      <div class="stat-label">Sessions</div>
+    </div>
+  </div>
+
+  <div class="stat-grid" style="margin-top:10px">
+    <div class="stat">
+      <div class="stat-value">{stats.totalSets}</div>
+      <div class="stat-label">Sets</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">{formatVolume(stats.totalVolume)}</div>
+      <div class="stat-label">Volume lb</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">{stats.best ? `${stats.best.repetitions}×` : '—'}</div>
+      <div class="stat-label">Best rep set</div>
+    </div>
+  </div>
+
+  <div class="section-heading">
+    <h2 class="section-title">Estimated 1RM trend</h2>
+    {stats.best && <span class="tiny muted">Best {formatScore(stats.best.estimatedOneRepMax)} lb</span>}
+  </div>
+  <div class="card">
+    <TrendChart
+      points={chart.map((point) => ({ date: point.date, value: point.value }))}
+      emptyMessage="Log this exercise to start the trend."
+    />
+  </div>
+
+  <div class="section-heading">
+    <h2 class="section-title">History</h2>
+    <span class="tiny muted">{history.length} recent</span>
+  </div>
+
+  {history.length === 0 ? (
+    <div class="empty-state">
+      <div class="empty-title">No sets logged yet</div>
+      <div class="empty-body">
+        Add this exercise to a routine and log a session. Every set will show up here.
+      </div>
+      <a class="button small" href="/routines">Open routines</a>
+    </div>
+  ) : (
+    <div class="stack">
+      {history.map((entry) => (
+        <article class="card compact">
+          <div class="row between top">
+            <div>
+              <div class="list-title">{relativeDateLabel(entry.trainingDate, today)}</div>
+              <div class="list-meta">{entry.routineName ?? 'Logged session'}</div>
+            </div>
+            <div style="text-align:right;flex:0 0 auto">
+              <div class="list-title" style="color:var(--accent)">
+                {formatScore(entry.bestEstimatedOneRepMax)}
+              </div>
+              <div class="list-meta">est. 1RM</div>
+            </div>
+          </div>
+          <div class="row wrap" style="margin-top:10px;gap:6px">
+            {entry.sets.map((set) => (
+              <span class="pill mono">{set.repetitions} × {formatLoad(set.load)} lb</span>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  )}
+</Layout>

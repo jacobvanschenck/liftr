@@ -1,0 +1,185 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TrendChart from '../components/TrendChart.astro';
+import { getBodyOverview } from '../lib/body';
+import { addDays, isValidCalendarDate, longDate, relativeDateLabel, todayInTimeZone } from '../lib/dates';
+
+const member = Astro.locals.member;
+if (member === null) return Astro.redirect('/sign-in');
+
+const today = todayInTimeZone(member.timezone);
+const requested = Astro.url.searchParams.get('date') ?? today;
+const selectedDate = isValidCalendarDate(requested) ? requested : today;
+const overview = await getBodyOverview(member, selectedDate);
+const error = Astro.url.searchParams.get('error');
+
+const valueByMetric = new Map(overview.today.values.map((value) => [value.metricId, value.value]));
+const activeMetrics = overview.metrics.filter((metric) => metric.isActive);
+const seriesByMetric = new Map(overview.series.map((series) => [series.metricId, series.points]));
+const latestByMetric = new Map(
+  overview.series.map((series) => [series.metricId, series.points.at(-1) ?? null]),
+);
+const hasValues = overview.today.values.length > 0;
+---
+
+<Layout title="Body" member={member}>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Measurements</p>
+      <h1 class="page-title">Body</h1>
+      <p class="page-subtitle">A quiet record of what the training is doing.</p>
+    </div>
+  </header>
+
+  {error && <div class="form-error" style="margin-bottom:16px" role="alert">{error}</div>}
+
+  <div class="card compact" style="margin-bottom:16px">
+    <form method="get" action="/body" class="row" style="gap:8px">
+      <input
+        class="input"
+        style="flex:1;min-width:0"
+        type="date"
+        name="date"
+        value={selectedDate}
+        max={today}
+        aria-label="Entry date"
+      />
+      <button class="button small" type="submit">View</button>
+    </form>
+    <div class="row between" style="margin-top:10px">
+      <a class="tiny" href={`/body?date=${addDays(selectedDate, -1)}`} style="color:var(--accent)">← Previous</a>
+      <span class="tiny muted">{relativeDateLabel(selectedDate, today)}</span>
+      {selectedDate < today ? (
+        <a class="tiny" href={`/body?date=${addDays(selectedDate, 1)}`} style="color:var(--accent)">Next →</a>
+      ) : (
+        <span class="tiny muted" aria-hidden="true">Next →</span>
+      )}
+    </div>
+  </div>
+
+  <div class="section-heading">
+    <h2 class="section-title">{longDate(selectedDate)}</h2>
+    {selectedDate !== today && <a class="section-action" href="/body">Today</a>}
+  </div>
+
+  <form class="card form" method="post" action="/api/body/save">
+    <input type="hidden" name="date" value={selectedDate} />
+
+    {activeMetrics.length === 0 ? (
+      <div class="empty-state" style="border:0;padding:18px 0">
+        <div class="empty-title">No measurements configured</div>
+        <div class="empty-body">Add body metrics to the family configuration to start tracking.</div>
+      </div>
+    ) : (
+      activeMetrics.map((metric) => (
+        <label class="metric-row">
+          <span>
+            <span class="metric-label">{metric.label}</span>
+            <span class="metric-hint">
+              {' '}Leave blank to remove this measurement for the day.
+            </span>
+          </span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <input
+              class="input mono"
+              style="text-align:right"
+              type="number"
+              inputmode="decimal"
+              step={metric.unit === 'lb' ? '0.1' : '0.25'}
+              min={metric.unit === 'lb' ? '1' : '5'}
+              max={metric.unit === 'lb' ? '1000' : '100'}
+              name={`value:${metric.id}`}
+              value={valueByMetric.get(metric.id) ?? ''}
+              placeholder="—"
+              aria-label={`${metric.label} (${metric.unit})`}
+            />
+            <span class="tiny muted" style="flex:0 0 22px">{metric.unit}</span>
+          </span>
+        </label>
+      ))
+    )}
+
+    <div class="form-actions">
+      <button class="button primary" type="submit" disabled={activeMetrics.length === 0}>
+        Save measurements
+      </button>
+    </div>
+  </form>
+
+  {hasValues && (
+    <form
+      method="post"
+      action="/api/body/delete"
+      style="margin-top:10px"
+      onsubmit="return confirm('Delete every measurement for this date?')"
+    >
+      <input type="hidden" name="date" value={selectedDate} />
+      <button class="button danger block" type="submit">Delete this entry</button>
+    </form>
+  )}
+
+  <div class="section-heading">
+    <h2 class="section-title">Trends</h2>
+  </div>
+
+  <div class="stack">
+    {overview.metrics
+      .filter((metric) => metric.isActive)
+      .map((metric) => {
+        const latest = latestByMetric.get(metric.id) ?? null;
+        return (
+          <div class="card compact">
+            <div class="row between" style="margin-bottom:6px">
+              <div class="list-title">{metric.label}</div>
+              <div class="row" style="gap:7px">
+                {latest && (
+                  <span class="tiny muted">{relativeDateLabel(latest.date, today)}</span>
+                )}
+                <span class="pill mono">
+                  {latest?.value ?? '—'} {metric.unit}
+                </span>
+              </div>
+            </div>
+            <TrendChart
+              points={seriesByMetric.get(metric.id) ?? []}
+              emptyMessage={`No ${metric.label.toLowerCase()} history yet.`}
+              height={108}
+            />
+          </div>
+        );
+      })}
+  </div>
+
+  <div class="section-heading">
+    <h2 class="section-title">History</h2>
+    <span class="tiny muted">{overview.history.length} entries</span>
+  </div>
+
+  {overview.history.length === 0 ? (
+    <div class="empty-state">
+      <div class="empty-title">No entries yet</div>
+      <div class="empty-body">Save a measurement above to start the record.</div>
+    </div>
+  ) : (
+    <div class="card compact">
+      {overview.history.map((entry) => (
+        <a class="history-row" href={`/body?date=${entry.date}`}>
+          <span class="history-date">{relativeDateLabel(entry.date, today)}</span>
+          <span class="history-values">
+            {entry.values.map((value) => {
+              const metric = overview.metrics.find((item) => item.id === value.metricId);
+              return (
+                <span class="pill mono">
+                  {metric?.label ?? 'Value'} {value.value} {metric?.unit ?? ''}
+                </span>
+              );
+            })}
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </a>
+      ))}
+    </div>
+  )}
+</Layout>

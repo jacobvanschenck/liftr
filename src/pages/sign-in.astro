@@ -1,0 +1,70 @@
+---
+import { SignIn } from '@clerk/astro/components';
+import Layout from '../layouts/Layout.astro';
+import BrandMark from '../components/BrandMark.astro';
+
+const { userId } = Astro.locals.auth();
+if (userId) return Astro.redirect(Astro.locals.member ? '/' : '/403');
+
+const appearance = {
+  variables: {
+    colorPrimary: '#0A84FF',
+    colorBackground: '#141417',
+    colorText: '#F5F5F7',
+    colorTextSecondary: '#8E8E96',
+    colorInputBackground: '#101013',
+    colorInputText: '#F5F5F7',
+    colorDanger: '#FF6B63',
+    borderRadius: '14px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  elements: {
+    card: 'clerk-card',
+    headerTitle: 'clerk-header-title',
+    headerSubtitle: 'clerk-header-subtitle',
+    socialButtonsBlockButton: 'clerk-social-button',
+    formButtonPrimary: 'clerk-primary-button',
+    footerActionLink: 'clerk-footer-link',
+    formFieldInput: 'clerk-input',
+    dividerLine: 'clerk-divider',
+    dividerText: 'clerk-divider-text',
+    identityPreviewEditButton: 'clerk-footer-link',
+  },
+};
+---
+
+<Layout title="Sign in" hideNav>
+  <div class="auth-shell">
+    <div class="stack">
+      <BrandMark size="large" />
+      <div>
+        <p class="eyebrow">Welcome back</p>
+        <h1 class="page-title">Sign in to Liftr.</h1>
+        <p class="page-subtitle">
+          Your sessions, routines, and history are waiting.
+        </p>
+      </div>
+    </div>
+
+    <div class="clerk-shell">
+      <SignIn
+        routing="path"
+        path="/sign-in"
+        fallbackRedirectUrl="/"
+        signUpFallbackRedirectUrl="/"
+        appearance={appearance}
+      />
+    </div>
+
+    <p class="form-hint" style="text-align:center">
+      Trouble with the embedded form?{' '}
+      <a
+        href="https://dynamic-flea-2535.clerk.accounts.dev/sign-in"
+        style="color:var(--accent)"
+      >
+        Open Clerk in a new tab
+      </a>
+      , then return here.
+    </p>
+  </div>
+</Layout>

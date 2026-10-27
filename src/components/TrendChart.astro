@@ -1,0 +1,117 @@
+---
+import { shortDate } from '../lib/dates';
+
+interface Point {
+  date: string;
+  value: number;
+}
+
+interface Props {
+  points: Point[];
+  emptyMessage?: string;
+  id?: string;
+  height?: number;
+  showLabels?: boolean;
+}
+
+const {
+  points,
+  emptyMessage = 'No history yet.',
+  id = `chart-${Math.random().toString(36).slice(2, 9)}`,
+  height = 132,
+  showLabels = true,
+} = Astro.props;
+
+const WIDTH = 320;
+const PADDING_X = 5;
+const PADDING_Y = 10;
+
+const values = points.map((point) => point.value);
+const min = Math.min(...values);
+const max = Math.max(...values);
+const span = max - min;
+
+const coordinates = points.map((point, index) => {
+  const x =
+    points.length === 1
+      ? WIDTH / 2
+      : PADDING_X + (index / (points.length - 1)) * (WIDTH - PADDING_X * 2);
+  const y =
+    span === 0
+      ? height / 2
+      : PADDING_Y + (1 - (point.value - min) / span) * (height - PADDING_Y * 2);
+  return { x, y, point };
+});
+
+const path = coordinates
+  .map(({ x, y }, index) => `${index === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`)
+  .join(' ');
+const areaPath =
+  coordinates.length > 1
+    ? `${path} L${coordinates.at(-1)!.x.toFixed(2)} ${height - PADDING_Y} L${coordinates[0]!.x.toFixed(2)} ${height - PADDING_Y} Z`
+    : '';
+---
+
+{
+  points.length === 0 ? (
+    <div class="chart-empty">{emptyMessage}</div>
+  ) : (
+    <>
+      <svg
+        class="chart"
+        viewBox={`0 0 ${WIDTH} ${height}`}
+        role="img"
+        aria-label={`Trend from ${points[0]?.date ?? ''} to ${points.at(-1)?.date ?? ''}`}
+      >
+        <defs>
+          <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#0A84FF" stop-opacity="0.32" />
+            <stop offset="100%" stop-color="#0A84FF" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        {[0.25, 0.5, 0.75].map((fraction) => (
+          <line
+            x1={PADDING_X}
+            x2={WIDTH - PADDING_X}
+            y1={PADDING_Y + fraction * (height - PADDING_Y * 2)}
+            y2={PADDING_Y + fraction * (height - PADDING_Y * 2)}
+            stroke="#242429"
+            stroke-width="1"
+            stroke-dasharray="2 5"
+          />
+        ))}
+        {areaPath && <path d={areaPath} fill={`url(#${id})`} />}
+        {path && (
+          <path
+            d={path}
+            fill="none"
+            stroke="#0A84FF"
+            stroke-width="2.25"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        )}
+        {coordinates.map(({ x, y, point }) => (
+          <circle
+            cx={x}
+            cy={y}
+            r="2.6"
+            fill="#08080A"
+            stroke="#0A84FF"
+            stroke-width="1.8"
+          >
+            <title>
+              {shortDate(point.date)}: {Math.round(point.value).toLocaleString('en-US')}
+            </title>
+          </circle>
+        ))}
+      </svg>
+      {showLabels && (
+        <div class="chart-caption">
+          <span>{shortDate(points[0]!.date)}</span>
+          <span>{shortDate(points.at(-1)!.date)}</span>
+        </div>
+      )}
+    </>
+  )
+}

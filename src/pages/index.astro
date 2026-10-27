@@ -1,0 +1,197 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BrandMark from '../components/BrandMark.astro';
+import TrendChart from '../components/TrendChart.astro';
+import { getDashboard } from '../lib/dashboard';
+import { partOfDay, startOfWeek, todayInTimeZone, relativeDateLabel, formatScore } from '../lib/dates';
+import { firstName } from '../lib/text';
+
+const member = Astro.locals.member;
+if (member === null) {
+  // Signed in, but not one of the two family members.
+  if (Astro.locals.auth().userId) return Astro.redirect('/403');
+}
+
+const now = new Date();
+const today = member ? todayInTimeZone(member.timezone) : '';
+const weekStart = member ? startOfWeek(now, member.timezone) : '';
+const dashboard = member ? await getDashboard(member, weekStart) : null;
+const greeting = member ? partOfDay(now, member.timezone) : '';
+const scoreHistory = dashboard?.history ?? [];
+const latestScore = scoreHistory.at(-1)?.strengthScore ?? null;
+const previousScore = scoreHistory.at(-2)?.strengthScore ?? null;
+const scoreDelta =
+  latestScore !== null && previousScore !== null ? latestScore - previousScore : null;
+---
+
+{
+  member === null ? (
+    <Layout title="Liftr" hideNav>
+      <div class="auth-shell">
+        <div class="landing-hero">
+          <BrandMark size="large" />
+          <div>
+            <p class="eyebrow">Private strength log</p>
+            <h1 class="landing-title">The log is the program.</h1>
+          </div>
+          <p class="landing-copy">
+            Two lifters. One shared catalog. Every set in one calm place — built to be opened
+            between sets, not managed.
+          </p>
+          <div class="landing-points">
+            <span class="landing-point">Routines that remember your targets</span>
+            <span class="landing-point">Set-by-set logging with plate math</span>
+            <span class="landing-point">Strength, bodyweight, and exercise history</span>
+          </div>
+        </div>
+
+        <div class="stack">
+          <a class="button primary block" href="/sign-in">Sign in</a>
+          <p class="form-hint" style="text-align:center">
+            Access is limited to invited members.
+          </p>
+        </div>
+      </div>
+    </Layout>
+  ) : (
+    <Layout title="Home" member={member}>
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Good {greeting}, {firstName(member.name)}</p>
+          <h1 class="page-title">Train with intent.</h1>
+        </div>
+        <a class="icon-button" href="/settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.64 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.15.36.37.7.6 1 .3.3.7.44 1.1.4H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51.6Z" />
+          </svg>
+        </a>
+      </header>
+
+      <section class="hero">
+        <div class="score-label"><span class="dot"></span> Strength score</div>
+        {dashboard!.strengthScore === null ? (
+          <>
+            <div class="score-value empty">—</div>
+            <div class="score-meta">
+              <span>Star a few core lifts and log a session to begin.</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div class="score-value">{formatScore(dashboard!.strengthScore)}</div>
+            <div class="score-meta">
+              <span><strong>{dashboard!.trackedCount}</strong> of <strong>{dashboard!.coreCount}</strong> core lifts</span>
+              {scoreDelta !== null && scoreDelta !== 0 && (
+                <span class:list={['delta', scoreDelta > 0 ? 'up' : 'down']}>
+                  {scoreDelta > 0 ? '+' : '−'}{formatScore(Math.abs(scoreDelta))}
+                </span>
+              )}
+              {dashboard!.scoreUpdatedAt && (
+                <span>Updated {relativeDateLabel(dashboard!.scoreUpdatedAt, today)}</span>
+              )}
+            </div>
+          </>
+        )}
+        <div class="score-cta">
+          <a class="button primary block" href="/routines">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+            Start a session
+          </a>
+        </div>
+      </section>
+
+      <div class="stat-grid" style="margin-top:12px">
+        <div class="stat">
+          <div class="stat-value">{dashboard!.thisWeekSessions}</div>
+          <div class="stat-label">This week</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">
+            {dashboard!.lastSession ? relativeDateLabel(dashboard!.lastSession.trainingDate, today) : '—'}
+          </div>
+          <div class="stat-label">Last session</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">{dashboard!.trackedCount}/{dashboard!.coreCount}</div>
+          <div class="stat-label">Core lifts</div>
+        </div>
+      </div>
+
+      <div class="section-heading">
+        <h2 class="section-title">Strength trend</h2>
+        <a class="section-action" href="/exercises">Catalog</a>
+      </div>
+      <div class="card">
+        <TrendChart
+          points={dashboard!.history.map((point) => ({ date: point.trainingDate, value: point.strengthScore }))}
+          emptyMessage="Your trend appears after your first completed session."
+        />
+      </div>
+
+      <div class="section-heading">
+        <h2 class="section-title">Core lifts</h2>
+        <span class="tiny muted">{dashboard!.coreExercises.length} tracked</span>
+      </div>
+
+      {dashboard!.coreExercises.length === 0 ? (
+        <div class="empty-state">
+          <div class="empty-title">Star your main lifts</div>
+          <div class="empty-body">
+            Core lifts feed the strength score and the trend above. Open the catalog and star
+            the movements that matter.
+          </div>
+          <a class="button small" href="/exercises">Open catalog</a>
+        </div>
+      ) : (
+        <div class="list">
+          {dashboard!.coreExercises.map((exercise) => (
+            <a class="list-row" href={`/exercises/${exercise.id}`}>
+              <span class="avatar accent" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
+                  <path d="m12 2.6 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 16.66 6.5 19.55l1.05-6.13L3.09 9.08l6.16-.9L12 2.6Z" />
+                </svg>
+              </span>
+              <span class="grow">
+                <span class="list-title">{exercise.name}</span>
+                <span class="list-meta">
+                  {exercise.latest
+                    ? `${formatScore(exercise.latest.estimatedOneRepMax)} lb est. 1RM · ${exercise.latest.repetitions} × ${exercise.latest.load} lb`
+                    : 'No sets logged yet'}
+                </span>
+              </span>
+              {exercise.latest && (
+                <span class="tiny muted" style="flex:0 0 auto">
+                  {relativeDateLabel(exercise.latest.trainingDate, today)}
+                </span>
+              )}
+              <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {dashboard!.lastSession && (
+        <>
+          <div class="section-heading">
+            <h2 class="section-title">Last session</h2>
+            <span class="tiny muted">{relativeDateLabel(dashboard!.lastSession.trainingDate, today)}</span>
+          </div>
+          <a class="card interactive" href="/routines" style="display:block">
+            <div class="row between">
+              <div>
+                <div class="list-title">{dashboard!.lastSession.routineName ?? 'Logged session'}</div>
+                <div class="list-meta">Tap to choose a routine and keep the streak going.</div>
+              </div>
+              <span class="pill">View routines</span>
+            </div>
+          </a>
+        </>
+      )}
+    </Layout>
+  )
+}

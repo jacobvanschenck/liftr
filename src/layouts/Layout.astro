@@ -1,0 +1,116 @@
+---
+import '../styles/global.css';
+import BottomNav from '../components/BottomNav.astro';
+import type { Member } from '../lib/types';
+
+interface Props {
+  title?: string;
+  description?: string;
+  member?: Member | null;
+  hideNav?: boolean;
+  bodyClass?: string;
+}
+
+const {
+  title = 'Liftr',
+  description = 'A private strength-training log for the two of us.',
+  member = Astro.locals.member,
+  hideNav = false,
+  bodyClass = '',
+} = Astro.props;
+
+const path = Astro.url.pathname;
+const fullTitle = title === 'Liftr' ? 'Liftr' : `${title} · Liftr`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#08080A" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Liftr" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <title>{fullTitle}</title>
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <div class="app-frame">
+      <main class:list={['app-main', hideNav && 'no-nav']}>
+        <slot />
+      </main>
+    </div>
+
+    {!hideNav && member && <BottomNav activePath={path} />}
+
+    <div id="network-toast" class="network-toast" role="alert" hidden>
+      Couldn’t save. Check your connection and try again.
+    </div>
+
+    <script>
+      import htmx from 'htmx.org';
+      import Alpine from 'alpinejs';
+      // Side-effect import: installs the Alpine helpers used by the templates.
+      import '../scripts/alpine.js';
+
+      // htmx handles form fragments; Alpine owns local UI state (plate math,
+      // the exercise pager, the routine draft). Both are self-hosted.
+      window.htmx = htmx;
+      window.Alpine = Alpine;
+      Alpine.start();
+
+      // htmx uses multi-colon event names, which Astro's template parser cannot
+      // express as attributes. Listen once and clear any set-edit state after
+      // a successful set save/delete.
+      document.addEventListener('htmx:after:request', (event) => {
+        const status = (event as CustomEvent).detail?.ctx?.response?.status;
+        if (typeof status !== 'number' || status >= 400) return;
+        document.querySelectorAll('[data-set-logger]').forEach((element) => {
+          const data = (window.Alpine as { $data?: (el: Element) => { editingSetId?: string | null } })
+            .$data?.(element);
+          if (data?.editingSetId) data.editingSetId = null;
+        });
+      });
+
+      // Online-only means a dropped connection should be honest about it. htmx
+      // fires these for transport failures and non-2xx responses.
+      const toast = document.getElementById('network-toast');
+      let toastTimer: number | undefined;
+      const showNetworkToast = () => {
+        if (!toast) return;
+        toast.hidden = false;
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => {
+          toast.hidden = true;
+        }, 5000);
+      };
+      document.addEventListener('htmx:error', showNetworkToast);
+      document.addEventListener('htmx:response:error', showNetworkToast);
+
+      if (!document.body.dataset.htmxProcessed) {
+        htmx.process(document.body);
+        document.body.dataset.htmxProcessed = 'true';
+      }
+
+      if ('serviceWorker' in navigator && location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Installation is a progressive enhancement; the app still works.
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
