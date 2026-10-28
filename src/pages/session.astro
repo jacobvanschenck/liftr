@@ -1,60 +1,30 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import EquipmentArt from '../components/EquipmentArt.astro';
-import { getActiveSession } from '../lib/sessions';
-import { repTargetLabel } from '../lib/session-view';
+import {
+  loadSessionLogger,
+  renderSetList,
+  type SessionLoggerExercise,
+} from '../lib/session-logger';
+import { BAR_WEIGHT, PLATES } from '../lib/plates';
 import { formatLoad, relativeDateLabel, todayInTimeZone } from '../lib/dates';
 import type { EquipmentCategory } from '../lib/types';
 
 const member = Astro.locals.member;
 if (member === null) return Astro.redirect('/sign-in');
 
-const session = await getActiveSession(member);
+const session = await loadSessionLogger(member);
 const today = todayInTimeZone(member.timezone);
 const error = Astro.url.searchParams.get('error');
 
-const BAR_WEIGHT = 45;
-const PLATES = [45, 35, 25, 10, 5, 2.5];
-
-function decomposeBarbell(load: number): Record<string, number> | null {
-  const perSide = (Number(load) - BAR_WEIGHT) / 2;
-  if (!Number.isFinite(perSide) || perSide < -0.001) return null;
-  const counts: Record<string, number> = {};
-  let remaining = Math.round(perSide * 100) / 100;
-  for (const plate of PLATES) {
-    let count = 0;
-    while (remaining + 0.001 >= plate && count < 20) {
-      remaining = Math.round((remaining - plate) * 100) / 100;
-      count += 1;
-    }
-    if (count > 0) counts[String(plate)] = count;
-  }
-  if (Math.abs(remaining) > 0.011) return null;
-  return counts;
-}
-
 const exercises = session?.exercises ?? [];
-const totalSets = exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
-const targetSets = exercises.reduce((total, exercise) => total + exercise.targetSetCount, 0);
-const firstIncomplete = exercises.findIndex(
-  (exercise) => exercise.sets.length < exercise.targetSetCount,
-);
-const initialIndex = firstIncomplete === -1 ? 0 : firstIncomplete;
+const totalSets = session?.totalSets ?? 0;
+const targetSets = session?.targetSets ?? 0;
+const initialIndex =
+  session === null || session.firstIncompleteIndex === -1 ? 0 : session.firstIncompleteIndex;
 
-function loggerConfig(exercise: (typeof exercises)[number]) {
-  const lastSet = exercise.sets.at(-1) ?? exercise.previousSet;
-  const fallback = exercise.equipmentCategory === 'barbell' ? BAR_WEIGHT : 20;
-  const initialLoad = lastSet?.load ?? fallback;
-  const plates =
-    exercise.equipmentCategory === 'barbell' ? decomposeBarbell(initialLoad) : {};
-  const manual = exercise.equipmentCategory === 'barbell' && plates === null;
-  return JSON.stringify({
-    category: exercise.equipmentCategory,
-    plates: plates ?? {},
-    manual,
-    manualLoad: initialLoad,
-    reps: lastSet?.repetitions ?? exercise.targetRepMin ?? 10,
-  }).replaceAll('<', '\\u003c');
+function loggerConfigJson(config: SessionLoggerExercise['loggerConfig']): string {
+  return JSON.stringify(config).replaceAll('<', '\\u003c');
 }
 
 const equipmentLabel: Record<EquipmentCategory, string> = {
@@ -116,18 +86,17 @@ const equipmentLabel: Record<EquipmentCategory, string> = {
                 load={
                   exercise.sets.at(-1)?.load ??
                   exercise.previousSet?.load ??
-                  (exercise.equipmentCategory === 'barbell' ? 45 : 20)
+                  (exercise.equipmentCategory === 'barbell' ? BAR_WEIGHT : 20)
                 }
               />
             </div>
 
-            <div class="exercise-panel" style="gap:16px" x-data={`setLogger(${loggerConfig(exercise)})`} data-set-logger>
+            <div class="exercise-panel" style="gap:16px" x-data={`setLogger(${loggerConfigJson(exercise.loggerConfig)})`} data-set-logger>
               <div class="logger-head">
                 <div style="min-width:0">
                   <h2 class="logger-name">{exercise.name}</h2>
                   <div id={`progress-${exercise.id}`} class="logger-target">
-                    {exercise.sets.length} of {exercise.targetSetCount} sets ·{' '}
-                    {repTargetLabel(exercise.targetRepMin, exercise.targetRepMax)}
+                    {exercise.progressLabel}
                   </div>
                 </div>
                 <div class="previous-set" style="text-align:right;flex:0 0 auto">
@@ -171,7 +140,7 @@ const equipmentLabel: Record<EquipmentCategory, string> = {
                         ))}
                       </div>
                       <div class="control-caption" style="margin-top:8px">
-                        Bar 45 lb · tap a plate to add a pair
+                        Bar {BAR_WEIGHT} lb · tap a plate to add a pair
                       </div>
                     </div>
 
@@ -270,48 +239,7 @@ const equipmentLabel: Record<EquipmentCategory, string> = {
                   <span class="section-title">Sets</span>
                   <span class="tiny muted" x-show="editingSetId" x-cloak>Editing</span>
                 </div>
-                <div id={`sets-list-${exercise.id}`}>
-                  {exercise.sets.length === 0 ? (
-                    <p class="tiny muted" style="padding:8px 2px">No sets logged yet.</p>
-                  ) : (
-                    exercise.sets.map((set, setIndex) => (
-                      <div class="set-row">
-                        <span class="set-index">{setIndex + 1}</span>
-                        <span class="set-value">
-                          {formatLoad(set.load)} lb × {set.repetitions}
-                        </span>
-                        <span class="set-actions">
-                          <button
-                            class="icon-button"
-                            type="button"
-                            aria-label={`Edit set ${setIndex + 1}`}
-                            title="Edit set"
-                            @click={`beginEdit(${set.load}, ${set.repetitions}, ${JSON.stringify(set.id)})`}
-                          >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                            </svg>
-                          </button>
-                          <button
-                            class="icon-button danger"
-                            type="button"
-                            aria-label={`Delete set ${setIndex + 1}`}
-                            title="Delete set"
-                            hx-post={`/api/sessions/set/${set.id}/delete`}
-                            hx-target={`#sets-list-${exercise.id}`}
-                            hx-swap="outerHTML"
-                            hx-confirm="Delete this set?"
-                          >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
-                            </svg>
-                          </button>
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
+                <div id={`sets-list-${exercise.id}`} set:html={renderSetList(exercise)}></div>
               </div>
             </div>
           </section>

@@ -1,28 +1,9 @@
 // Alpine helpers are plain JavaScript: they run in the browser and keep the
 // HTML templates readable. No build step or client store is involved.
-
-const PLATES = [45, 35, 25, 10, 5, 2.5];
-const BAR_WEIGHT = 45;
-
-function decomposeBarbell(load) {
-  const perSide = (Number(load) - BAR_WEIGHT) / 2;
-  if (!Number.isFinite(perSide) || perSide < -0.001) return null;
-
-  const counts = {};
-  let remaining = Math.round(perSide * 100) / 100;
-
-  for (const plate of PLATES) {
-    let count = 0;
-    while (remaining + 0.001 >= plate && count < 20) {
-      remaining = Math.round((remaining - plate) * 100) / 100;
-      count += 1;
-    }
-    if (count > 0) counts[plate] = count;
-  }
-
-  if (Math.abs(remaining) > 0.011) return null;
-  return counts;
-}
+import {
+  barbellLoad as calculateBarbellLoad,
+  decomposeBarbell,
+} from '../lib/plates';
 
 window.setLogger = (config) => ({
   category: config.category,
@@ -33,11 +14,7 @@ window.setLogger = (config) => ({
   editingSetId: null,
 
   get barbellLoad() {
-    let total = BAR_WEIGHT;
-    for (const plate of PLATES) {
-      total += 2 * plate * (Number(this.plates[plate]) || 0);
-    }
-    return Math.round(total * 100) / 100;
+    return calculateBarbellLoad(this.plates);
   },
 
   get load() {

@@ -1,13 +1,15 @@
 import type { APIContext } from 'astro';
-import { addSet, updateSet } from '../../../../lib/sessions';
-import { errorMessage } from '../../../../lib/errors';
+import {
+  applySetCommand,
+  renderSetFragment,
+  type SetCommand,
+} from '../../../../lib/session-logger';
 import {
   formNumber,
   formString,
   isMember,
   requireApiMember,
 } from '../../../../lib/http';
-import { renderSetFragment } from '../../../../lib/session-view';
 
 export async function POST(context: APIContext): Promise<Response> {
   const member = requireApiMember(context);
@@ -19,20 +21,19 @@ export async function POST(context: APIContext): Promise<Response> {
   const repetitions = formNumber(form, 'reps');
   const load = formNumber(form, 'load');
 
-  let error: string | null = null;
-  try {
-    if (setId === '') {
-      await addSet(member, sessionExerciseId, repetitions, load);
-    } else {
-      await updateSet(member, setId, repetitions, load);
-    }
-  } catch (caught) {
-    error = errorMessage(caught);
+  const command: SetCommand =
+    setId === ''
+      ? { type: 'add', sessionExerciseId, repetitions, load }
+      : { type: 'update', setId, repetitions, load };
+
+  const result = await applySetCommand(member, command);
+  if (result === null) {
+    return new Response(command.type === 'update' ? 'Set not found' : 'Exercise not found', {
+      status: 404,
+    });
   }
 
-  const fragment = await renderSetFragment(member, sessionExerciseId, error);
-  if (fragment === null) return new Response('Exercise not found', { status: 404 });
-  return new Response(fragment, {
+  return new Response(renderSetFragment(result.fragment, result.error), {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });

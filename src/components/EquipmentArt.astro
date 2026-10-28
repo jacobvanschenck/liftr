@@ -1,4 +1,5 @@
 ---
+import { BAR_WEIGHT, PLATE_SPECS, type PlateSpec } from '../lib/plates';
 import type { EquipmentCategory } from '../lib/types';
 
 interface Props {
@@ -7,22 +8,12 @@ interface Props {
   compact?: boolean;
 }
 
-const { category, load = 45 } = Astro.props;
-
-const BAR_WEIGHT = 45;
-const PLATES = [
-  { weight: 45, color: '#2F6FED', height: 82, width: 10 },
-  { weight: 35, color: '#F5C542', height: 68, width: 9 },
-  { weight: 25, color: '#37C26A', height: 56, width: 8 },
-  { weight: 10, color: '#D8D8DE', height: 40, width: 7 },
-  { weight: 5, color: '#9A9AA3', height: 32, width: 6 },
-  { weight: 2.5, color: '#E85B52', height: 26, width: 5 },
-];
+const { category, load = BAR_WEIGHT } = Astro.props;
 
 const perSide = Math.max(0, (Number.isFinite(load) ? load : BAR_WEIGHT) - BAR_WEIGHT) / 2;
-const plates: { weight: number; color: string; height: number; width: number }[] = [];
+const plates: PlateSpec[] = [];
 let remaining = perSide;
-for (const plate of PLATES) {
+for (const plate of PLATE_SPECS) {
   while (remaining >= plate.weight && plates.length < 6) {
     plates.push(plate);
     remaining -= plate.weight;
