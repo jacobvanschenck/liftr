@@ -17,9 +17,9 @@ const equipmentLabel: Record<string, string> = {
 ---
 
 <div id="exercise-catalog">
-  <div class="row between" style="margin-bottom:10px">
-    <span class="tiny muted">{exercises.length} exercises · {coreCount} core</span>
-    <span class="tiny muted">Tap the star to track</span>
+  <div class="flex items-center justify-between gap-3" style="margin-bottom:10px">
+    <span class="text-xs text-muted-foreground">{exercises.length} exercises · {coreCount} core</span>
+    <span class="text-xs text-muted-foreground">Tap the star to track</span>
   </div>
 
   {
@@ -32,7 +32,7 @@ const equipmentLabel: Record<string, string> = {
 
   <div
     x-data={`{ q: ${JSON.stringify(query)} }`}
-    class="stack"
+    class="grid gap-3"
   >
     <label class="field" style="gap:0">
       <span class="sr-only">Filter exercises</span>
@@ -66,7 +66,7 @@ const equipmentLabel: Record<string, string> = {
               </button>
             </form>
 
-            <a class="grow" href={`/exercises/${exercise.id}`} style="min-width:0">
+            <a class="min-w-0 flex-1" href={`/exercises/${exercise.id}`} style="min-width:0">
               <div class="list-title">{exercise.name}</div>
               <div class="list-meta">
                 {equipmentLabel[exercise.equipmentCategory] ?? exercise.equipmentCategory}

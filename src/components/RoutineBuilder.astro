@@ -59,7 +59,7 @@ const action =
 
   <div class="section-heading" style="margin-top:4px">
     <h2 class="section-title">Exercises</h2>
-    <span class="tiny muted" x-text="`${items.length} selected`"></span>
+    <span class="text-xs text-muted-foreground" x-text="`${items.length} selected`"></span>
   </div>
 
   <div class="builder-list" x-show="items.length > 0" x-cloak>
@@ -67,7 +67,7 @@ const action =
       <div class="builder-row">
         <div class="builder-main">
           <span class="builder-order" x-text="index + 1"></span>
-          <div class="grow">
+          <div class="min-w-0 flex-1">
             <div class="list-title" x-text="item.name"></div>
             <div class="list-meta" x-text="item.equipmentCategory"></div>
           </div>
@@ -108,7 +108,7 @@ const action =
 
   <div class="section-heading" style="margin-top:8px">
     <h2 class="section-title">Add from catalog</h2>
-    <span class="tiny muted" x-text="`${available.length} available`"></span>
+    <span class="text-xs text-muted-foreground" x-text="`${available.length} available`"></span>
   </div>
 
   <input

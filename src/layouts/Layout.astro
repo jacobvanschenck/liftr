@@ -47,8 +47,15 @@ const fullTitle = title === 'Liftr' ? 'Liftr' : `${title} · Liftr`;
     <slot name="head" />
   </head>
   <body class={bodyClass}>
-    <div class="app-frame">
-      <main class:list={['app-main', hideNav && 'no-nav']}>
+    <div class="mx-auto w-full max-w-[var(--max-width)] px-[18px] max-[420px]:px-3.5">
+      <main
+        class:list={[
+          'min-h-dvh pt-[max(20px,env(safe-area-inset-top))]',
+          hideNav
+            ? 'pb-[calc(28px+env(safe-area-inset-bottom))]'
+            : 'pb-[calc(var(--nav-height)+34px+env(safe-area-inset-bottom))]',
+        ]}
+      >
         <slot />
       </main>
     </div>

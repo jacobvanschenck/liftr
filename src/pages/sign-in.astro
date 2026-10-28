@@ -35,7 +35,7 @@ const appearance = {
 
 <Layout title="Sign in" hideNav>
   <div class="auth-shell">
-    <div class="stack">
+    <div class="grid gap-3">
       <BrandMark size="large" />
       <div>
         <p class="eyebrow">Welcome back</p>
@@ -56,12 +56,9 @@ const appearance = {
       />
     </div>
 
-    <p class="form-hint" style="text-align:center">
+    <p class="form-hint text-center">
       Trouble with the embedded form?{' '}
-      <a
-        href="https://dynamic-flea-2535.clerk.accounts.dev/sign-in"
-        style="color:var(--accent)"
-      >
+      <a class="text-brand" href="https://dynamic-flea-2535.clerk.accounts.dev/sign-in">
         Open Clerk in a new tab
       </a>
       , then return here.

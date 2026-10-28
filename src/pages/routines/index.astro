@@ -38,14 +38,14 @@ const error = Astro.url.searchParams.get('error');
         <span>Resume where you left off</span>
       </div>
       <div class="score-cta">
-        <a class="button primary block" href="/session">Resume session</a>
+        <a class="button primary full" href="/session">Resume session</a>
       </div>
     </div>
   )}
 
   <div class="section-heading">
     <h2 class="section-title">Your routines</h2>
-    <span class="tiny muted">{routines.length} saved</span>
+    <span class="text-xs text-muted-foreground">{routines.length} saved</span>
   </div>
 
   {routines.length === 0 ? (
@@ -57,11 +57,11 @@ const error = Astro.url.searchParams.get('error');
       <a class="button small primary" href="/routines/new">New routine</a>
     </div>
   ) : (
-    <div class="stack">
+    <div class="grid gap-3">
       {routines.map((routine) => (
         <article class="card compact">
-          <div class="row top">
-            <div class="grow">
+          <div class="flex items-start gap-3">
+            <div class="min-w-0 flex-1">
               <div class="list-title" style="font-size:16px">{routine.name}</div>
               <div class="list-meta">{routine.exerciseCount} exercises</div>
             </div>
@@ -81,7 +81,7 @@ const error = Astro.url.searchParams.get('error');
           <form method="post" action="/api/sessions/start" style="margin-top:12px">
             <input type="hidden" name="routineId" value={routine.id} />
             <input type="hidden" name="trainingDate" value={today} />
-            <button class="button primary block" type="submit" disabled={activeSession !== null}>
+            <button class="button primary full" type="submit" disabled={activeSession !== null}>
               {activeSession ? 'Finish current session first' : 'Start session'}
             </button>
           </form>
@@ -94,7 +94,7 @@ const error = Astro.url.searchParams.get('error');
     <h2 class="section-title">New</h2>
   </div>
   <a class="card interactive" href="/routines/new" style="display:block">
-    <div class="row between">
+    <div class="flex items-center justify-between gap-3">
       <div>
         <div class="list-title">Build a routine</div>
         <div class="list-meta">Order exercises and set targets</div>

@@ -186,11 +186,11 @@ const equipmentLabel: Record<EquipmentCategory, string> = {
                   </div>
                 )}
 
-                <div class="divider"></div>
+                <div class="my-1 h-px bg-border"></div>
 
-                <div class="row between">
+                <div class="flex items-center justify-between gap-3">
                   <span class="control-caption">Reps</span>
-                  <span class="tiny muted" x-show="editingSetId" x-cloak>Editing set</span>
+                  <span class="text-xs text-muted-foreground" x-show="editingSetId" x-cloak>Editing set</span>
                 </div>
 
                 <div class="stepper-row">
@@ -219,11 +219,11 @@ const equipmentLabel: Record<EquipmentCategory, string> = {
                   <input type="hidden" name="setId" x-effect="$el.value = editingSetId ?? ''" />
                   <input type="hidden" name="reps" x-effect="$el.value = reps" />
                   <input type="hidden" name="load" x-effect="$el.value = load" />
-                  <button class="button primary block" type="submit" >
+                  <button class="button primary full" type="submit" >
                     <span x-text="editingSetId ? 'Save set' : 'Add set'"></span>
                   </button>
                   <button
-                    class="button ghost block"
+                    class="button ghost full"
                     type="button"
                     x-show="editingSetId"
                     x-cloak
@@ -237,7 +237,7 @@ const equipmentLabel: Record<EquipmentCategory, string> = {
               <div class="set-section">
                 <div class="set-heading">
                   <span class="section-title">Sets</span>
-                  <span class="tiny muted" x-show="editingSetId" x-cloak>Editing</span>
+                  <span class="text-xs text-muted-foreground" x-show="editingSetId" x-cloak>Editing</span>
                 </div>
                 <div id={`sets-list-${exercise.id}`} set:html={renderSetList(exercise)}></div>
               </div>
@@ -259,14 +259,14 @@ const equipmentLabel: Record<EquipmentCategory, string> = {
 
         <div class="session-footer">
           <button
-            class="button primary block"
+            class="button primary full"
             type="button"
             onclick="document.getElementById('finish-dialog').showModal()"
           >
             Finish session
           </button>
           <button
-            class="button ghost block"
+            class="button ghost full"
             type="button"
             onclick="document.getElementById('discard-dialog').showModal()"
           >

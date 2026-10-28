@@ -31,7 +31,7 @@ const equipmentLabel: Record<string, string> = {
     <div>
       <p class="eyebrow">Exercise</p>
       <h1 class="page-title">{exercise.name}</h1>
-      <div class="row wrap" style="margin-top:10px;gap:6px">
+      <div class="flex items-center flex-wrap gap-3" style="margin-top:10px;gap:6px">
         <span class="pill">{equipmentLabel[exercise.equipmentCategory]}</span>
         {exercise.isCore && <span class="pill core">Core lift</span>}
         {stats.lastTrained && (
@@ -83,7 +83,7 @@ const equipmentLabel: Record<string, string> = {
 
   <div class="section-heading">
     <h2 class="section-title">Estimated 1RM trend</h2>
-    {stats.best && <span class="tiny muted">Best {formatScore(stats.best.estimatedOneRepMax)} lb</span>}
+    {stats.best && <span class="text-xs text-muted-foreground">Best {formatScore(stats.best.estimatedOneRepMax)} lb</span>}
   </div>
   <div class="card">
     <TrendChart
@@ -94,7 +94,7 @@ const equipmentLabel: Record<string, string> = {
 
   <div class="section-heading">
     <h2 class="section-title">History</h2>
-    <span class="tiny muted">{history.length} recent</span>
+    <span class="text-xs text-muted-foreground">{history.length} recent</span>
   </div>
 
   {history.length === 0 ? (
@@ -106,24 +106,24 @@ const equipmentLabel: Record<string, string> = {
       <a class="button small" href="/routines">Open routines</a>
     </div>
   ) : (
-    <div class="stack">
+    <div class="grid gap-3">
       {history.map((entry) => (
         <article class="card compact">
-          <div class="row between top">
+          <div class="flex items-start justify-between gap-3">
             <div>
               <div class="list-title">{relativeDateLabel(entry.trainingDate, today)}</div>
               <div class="list-meta">{entry.routineName ?? 'Logged session'}</div>
             </div>
             <div style="text-align:right;flex:0 0 auto">
-              <div class="list-title" style="color:var(--accent)">
+              <div class="list-title text-brand">
                 {formatScore(entry.bestEstimatedOneRepMax)}
               </div>
               <div class="list-meta">est. 1RM</div>
             </div>
           </div>
-          <div class="row wrap" style="margin-top:10px;gap:6px">
+          <div class="flex items-center flex-wrap gap-3" style="margin-top:10px;gap:6px">
             {entry.sets.map((set) => (
-              <span class="pill mono">{set.repetitions} × {formatLoad(set.load)} lb</span>
+              <span class="pill tabular-nums">{set.repetitions} × {formatLoad(set.load)} lb</span>
             ))}
           </div>
         </article>

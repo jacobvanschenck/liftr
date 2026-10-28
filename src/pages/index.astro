@@ -45,8 +45,8 @@ const scoreDelta =
           </div>
         </div>
 
-        <div class="stack">
-          <a class="button primary block" href="/sign-in">Sign in</a>
+        <div class="grid gap-3">
+          <a class="button primary full" href="/sign-in">Sign in</a>
           <p class="form-hint" style="text-align:center">
             Access is limited to invited members.
           </p>
@@ -94,7 +94,7 @@ const scoreDelta =
           </>
         )}
         <div class="score-cta">
-          <a class="button primary block" href="/routines">
+          <a class="button primary full" href="/routines">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -133,7 +133,7 @@ const scoreDelta =
 
       <div class="section-heading">
         <h2 class="section-title">Core lifts</h2>
-        <span class="tiny muted">{dashboard!.coreExercises.length} tracked</span>
+        <span class="text-xs text-muted-foreground">{dashboard!.coreExercises.length} tracked</span>
       </div>
 
       {dashboard!.coreExercises.length === 0 ? (
@@ -154,7 +154,7 @@ const scoreDelta =
                   <path d="m12 2.6 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 16.66 6.5 19.55l1.05-6.13L3.09 9.08l6.16-.9L12 2.6Z" />
                 </svg>
               </span>
-              <span class="grow">
+              <span class="min-w-0 flex-1">
                 <span class="list-title">{exercise.name}</span>
                 <span class="list-meta">
                   {exercise.latest
@@ -163,7 +163,7 @@ const scoreDelta =
                 </span>
               </span>
               {exercise.latest && (
-                <span class="tiny muted" style="flex:0 0 auto">
+                <span class="text-xs text-muted-foreground" style="flex:0 0 auto">
                   {relativeDateLabel(exercise.latest.trainingDate, today)}
                 </span>
               )}
@@ -179,15 +179,15 @@ const scoreDelta =
         <>
           <div class="section-heading">
             <h2 class="section-title">Last session</h2>
-            <span class="tiny muted">{relativeDateLabel(dashboard!.lastSession.trainingDate, today)}</span>
+            <span class="text-xs text-muted-foreground">{relativeDateLabel(dashboard!.lastSession.trainingDate, today)}</span>
           </div>
           <a class="card interactive" href="/routines" style="display:block">
-            <div class="row between">
-              <div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
                 <div class="list-title">{dashboard!.lastSession.routineName ?? 'Logged session'}</div>
                 <div class="list-meta">Tap to choose a routine and keep the streak going.</div>
               </div>
-              <span class="pill">View routines</span>
+              <span class="pill shrink-0">View routines</span>
             </div>
           </a>
         </>

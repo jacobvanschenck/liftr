@@ -34,7 +34,7 @@ const hasValues = overview.today.values.length > 0;
   {error && <div class="form-error" style="margin-bottom:16px" role="alert">{error}</div>}
 
   <div class="card compact" style="margin-bottom:16px">
-    <form method="get" action="/body" class="row" style="gap:8px">
+    <form method="get" action="/body" class="flex items-center gap-3" style="gap:8px">
       <input
         class="input"
         style="flex:1;min-width:0"
@@ -46,13 +46,13 @@ const hasValues = overview.today.values.length > 0;
       />
       <button class="button small" type="submit">View</button>
     </form>
-    <div class="row between" style="margin-top:10px">
-      <a class="tiny" href={`/body?date=${addDays(selectedDate, -1)}`} style="color:var(--accent)">← Previous</a>
-      <span class="tiny muted">{relativeDateLabel(selectedDate, today)}</span>
+    <div class="flex items-center justify-between gap-3" style="margin-top:10px">
+      <a class="text-xs text-brand" href={`/body?date=${addDays(selectedDate, -1)}`}>← Previous</a>
+      <span class="text-xs text-muted-foreground">{relativeDateLabel(selectedDate, today)}</span>
       {selectedDate < today ? (
-        <a class="tiny" href={`/body?date=${addDays(selectedDate, 1)}`} style="color:var(--accent)">Next →</a>
+        <a class="text-xs text-brand" href={`/body?date=${addDays(selectedDate, 1)}`}>Next →</a>
       ) : (
-        <span class="tiny muted" aria-hidden="true">Next →</span>
+        <span class="text-xs text-muted-foreground" aria-hidden="true">Next →</span>
       )}
     </div>
   </div>
@@ -81,7 +81,7 @@ const hasValues = overview.today.values.length > 0;
           </span>
           <span style="display:flex;align-items:center;gap:8px">
             <input
-              class="input mono"
+              class="input tabular-nums"
               style="text-align:right"
               type="number"
               inputmode="decimal"
@@ -93,7 +93,7 @@ const hasValues = overview.today.values.length > 0;
               placeholder="—"
               aria-label={`${metric.label} (${metric.unit})`}
             />
-            <span class="tiny muted" style="flex:0 0 22px">{metric.unit}</span>
+            <span class="text-xs text-muted-foreground" style="flex:0 0 22px">{metric.unit}</span>
           </span>
         </label>
       ))
@@ -114,7 +114,7 @@ const hasValues = overview.today.values.length > 0;
       onsubmit="return confirm('Delete every measurement for this date?')"
     >
       <input type="hidden" name="date" value={selectedDate} />
-      <button class="button danger block" type="submit">Delete this entry</button>
+      <button class="button danger full" type="submit">Delete this entry</button>
     </form>
   )}
 
@@ -122,20 +122,20 @@ const hasValues = overview.today.values.length > 0;
     <h2 class="section-title">Trends</h2>
   </div>
 
-  <div class="stack">
+  <div class="grid gap-3">
     {overview.metrics
       .filter((metric) => metric.isActive)
       .map((metric) => {
         const latest = latestByMetric.get(metric.id) ?? null;
         return (
           <div class="card compact">
-            <div class="row between" style="margin-bottom:6px">
+            <div class="flex items-center justify-between gap-3" style="margin-bottom:6px">
               <div class="list-title">{metric.label}</div>
-              <div class="row" style="gap:7px">
+              <div class="flex items-center gap-3" style="gap:7px">
                 {latest && (
-                  <span class="tiny muted">{relativeDateLabel(latest.date, today)}</span>
+                  <span class="text-xs text-muted-foreground">{relativeDateLabel(latest.date, today)}</span>
                 )}
-                <span class="pill mono">
+                <span class="pill tabular-nums">
                   {latest?.value ?? '—'} {metric.unit}
                 </span>
               </div>
@@ -152,7 +152,7 @@ const hasValues = overview.today.values.length > 0;
 
   <div class="section-heading">
     <h2 class="section-title">History</h2>
-    <span class="tiny muted">{overview.history.length} entries</span>
+    <span class="text-xs text-muted-foreground">{overview.history.length} entries</span>
   </div>
 
   {overview.history.length === 0 ? (
@@ -169,7 +169,7 @@ const hasValues = overview.today.values.length > 0;
             {entry.values.map((value) => {
               const metric = overview.metrics.find((item) => item.id === value.metricId);
               return (
-                <span class="pill mono">
+                <span class="pill tabular-nums">
                   {metric?.label ?? 'Value'} {value.value} {metric?.unit ?? ''}
                 </span>
               );

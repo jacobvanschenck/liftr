@@ -12,6 +12,7 @@ Live app: **https://liftr.jacobvs.workers.dev**
 - **Astro 7** server-rendered pages on **Cloudflare Workers**
 - **htmx 4** for server mutations and HTML fragments
 - **Alpine.js 3** for local UI state (plate math, steppers, builders)
+- **Tailwind CSS 4** with shadcn-style theme tokens and a `/theme` style guide
 - **Cloudflare D1** (SQLite) with raw SQL and typed helpers
 - **Clerk** for sign-in, reusing the existing Liftr development instance
 - Installable PWA, online-only, free `*.workers.dev` hostname
@@ -133,6 +134,7 @@ src/
     body.astro            Measurements and trends
     session.astro         Active session logger
     settings.astro        Account, install help, sign out
+    theme.astro           Theme tokens and component specimens
     api/                  Form endpoints (htmx fragments or redirects)
   lib/                    D1 access, domain rules, view fragments
   scripts/alpine.js      setLogger, sessionPage, routineBuilder
